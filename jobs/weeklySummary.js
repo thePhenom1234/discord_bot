@@ -13,7 +13,7 @@ module.exports = (client) => {
     "0 0 9 * * 1",
     async () => {
       try {
-        const all = db.getAll();
+        const all = await db.getAll();
         const now = new Date();
         const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
 

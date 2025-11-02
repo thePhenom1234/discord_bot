@@ -8,8 +8,8 @@ module.exports = (client) => {
   // check every 30 seconds using cron (or you can use setInterval)
   const job = new cron.CronJob("*/30 * * * * *", async () => {
     const now = new Date();
-    const due = reminderUtils.getDueReminders(now);
-    if (!due.length) return;
+    const due = await reminderUtils.getDueReminders(now);
+    if (!due || !due.length) return;
 
     for (const rem of due) {
       try {
@@ -45,14 +45,15 @@ module.exports = (client) => {
           components: [buttons],
         });
 
-        // append to history: delivered
+        // mark as delivered and update history
         rem.history = rem.history || [];
         rem.history.push({
           at: new Date().toISOString(),
           action: "delivered",
           messageId: sent.id,
         });
-        db.update(rem.id, rem);
+        rem.delivered = true; // Mark as delivered so it won't be sent again
+        await db.update(rem.id, rem);
 
         // If not repeating and not interacted with, we will leave it; user must press complete to mark done,
         // or our system can mark auto-complete after some time. For simplicity, we keep it pending until user completes.

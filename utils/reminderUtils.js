@@ -43,14 +43,15 @@ async function createReminder({
     tags: tags || [],
     createdAt: new Date().toISOString(),
     completed: false,
+    delivered: false,
     history: [],
   };
-  db.add(reminder);
+  await db.add(reminder);
   return reminder;
 }
 
 async function markComplete(id, actorUserId) {
-  const rem = db.findById(id);
+  const rem = await db.findById(id);
   if (!rem) throw new Error("Reminder not found");
   // push history entry
   rem.history = rem.history || [];
@@ -71,12 +72,13 @@ async function markComplete(id, actorUserId) {
   } else {
     rem.completed = true;
   }
-  db.update(id, rem);
+  rem.delivered = false; // Reset delivered flag so next occurrence can be sent
+  await db.update(id, rem);
   return rem;
 }
 
 async function snoozeReminder(id, minutes = 10, actorUserId) {
-  const rem = db.findById(id);
+  const rem = await db.findById(id);
   if (!rem) throw new Error("Reminder not found");
   const newTime = new Date(Date.now() + minutes * 60 * 1000);
   rem.history = rem.history || [];
@@ -88,14 +90,21 @@ async function snoozeReminder(id, minutes = 10, actorUserId) {
   });
   rem.time = newTime.toISOString();
   rem.completed = false;
-  db.update(id, rem);
+  rem.delivered = false; // Reset delivered flag so snoozed reminder will be sent
+  await db.update(id, rem);
   return rem;
 }
 
-function getDueReminders(now = new Date()) {
-  const arr = db.getAll();
+async function getDueReminders(now = new Date()) {
+  const arr = await db.getAll();
   // due: time <= now and not completed
-  return arr.filter((r) => !r.completed && new Date(r.time) <= now);
+  return (Array.isArray(arr) ? arr : []).filter((r) => {
+    // Check if reminder is:
+    // 1. Not completed
+    // 2. Not already delivered
+    // 3. Due (time <= now)
+    return !r.completed && !r.delivered && new Date(r.time) <= now;
+  });
 }
 
 module.exports = {

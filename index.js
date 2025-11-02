@@ -11,9 +11,10 @@ const REST = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
 const { v4: uuidv4 } = require("uuid");
 require("dotenv").config();
+const db = require("./utils/db");
+
 
 const token = process.env.DISCORD_TOKEN;
-const guildId = process.env.DISCORD_GUILD_ID;
 const clientId = process.env.DISCORD_CLIENT_ID;
 
 // load commands to register
@@ -107,9 +108,17 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 // when ready
-client.once(Events.ClientReady, (c) => {
-  console.log(`Ready as ${c.user.tag}`);
-  // start background jobs
+client.once(Events.ClientReady, async (c) => {
+  console.log(`✅ Ready as ${c.user.tag}`);
+
+  try {
+    await db.init(client, process.env.REMINDERS_CHANNEL_ID);
+    console.log("✅ Reminder database initialized!");
+  } catch (err) {
+    console.error("❌ Failed to initialize reminders DB:", err);
+  }
+
+  // start background jobs AFTER db.init()
   require("./jobs/reminderScheduler")(client);
   require("./jobs/weeklySummary")(client);
 });

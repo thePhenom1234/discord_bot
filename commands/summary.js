@@ -8,7 +8,7 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
     try {
-      const all = db.getAll();
+      const all = await db.getAll();
       const userId = interaction.user.id;
       const now = new Date();
       const weekAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
