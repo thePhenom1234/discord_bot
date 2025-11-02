@@ -2,8 +2,10 @@ const cron = require("cron");
 const db = require("../utils/db");
 const { buildReminderEmbed } = require("../utils/embedBuilder");
 const { EmbedBuilder } = require("discord.js");
-const { timeZone, defaultSummaryChannelId } = require("../config.json");
+require("dotenv").config();
 
+const defaultSummaryChannelId = process.env.DISCORD_DEFAULT_SUMMARY_CHANNEL_ID;
+const timeZone = process.env.TIME_ZONE || "UTC";
 module.exports = (client) => {
   // Cron in server local time — this library uses server time. If server is UTC, adjust or use tz option.
   // We'll schedule every Monday at 09:00 server-time. If you want timezone-specific cron, you can add tz param.

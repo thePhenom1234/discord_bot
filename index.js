@@ -7,10 +7,14 @@ const {
   Collection,
   Events,
 } = require("discord.js");
-const { token, guildId } = require("./config.json");
 const REST = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
 const { v4: uuidv4 } = require("uuid");
+require("dotenv").config();
+
+const token = process.env.DISCORD_TOKEN;
+const guildId = process.env.DISCORD_GUILD_ID;
+const clientId = process.env.DISCORD_CLIENT_ID;
 
 // load commands to register
 const commandsPath = path.join(__dirname, "commands");
@@ -28,24 +32,11 @@ for (const file of commandFiles) {
 (async () => {
   try {
     const rest = new REST.REST({ version: "10" }).setToken(token);
-    if (guildId) {
-      await rest.put(
-        Routes.applicationGuildCommands(
-          require("./config.json").clientId,
-          guildId
-        ),
-        { body: commands }
-      );
-      console.log("Registered guild commands.");
-    } else {
-      await rest.put(
-        Routes.applicationCommands(require("./config.json").clientId),
-        { body: commands }
-      );
-      console.log(
-        "Registered global commands (can take up to an hour to appear)."
-      );
-    }
+
+    await rest.put(Routes.applicationCommands(clientId), { body: commands });
+    console.log(
+      "Registered global commands (can take up to an hour to appear)."
+    );
   } catch (err) {
     console.error("Failed to register commands:", err);
   }
