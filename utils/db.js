@@ -2,6 +2,22 @@ const fs = require("fs-extra");
 const path = require("path");
 const DATA_FILE = path.join(__dirname, "..", "data", "reminders.json");
 
+// Check and cleanup file if it's older than 14 days
+function cleanupOldFile() {
+  try {
+    const stats = fs.statSync(DATA_FILE);
+    const fileAge = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60 * 24); // age in days
+    if (fileAge >= 14) {
+      fs.unlinkSync(DATA_FILE);
+      console.log("Deleted old reminders.json file");
+    }
+  } catch (err) {
+    // File doesn't exist, no need to do anything
+  }
+}
+
+// Check for cleanup on startup
+cleanupOldFile();
 fs.ensureFileSync(DATA_FILE);
 
 function readData() {
