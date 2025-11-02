@@ -7,8 +7,10 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 module.exports = (client) => {
   // check every 30 seconds using cron (or you can use setInterval)
   const job = new cron.CronJob("*/30 * * * * *", async () => {
+    console.log("📋 Checking for due reminders...");
     const now = new Date();
     const due = await reminderUtils.getDueReminders(now);
+    console.log(`Found ${due?.length || 0} due reminders`);
     if (!due || !due.length) return;
 
     for (const rem of due) {

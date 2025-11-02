@@ -13,7 +13,6 @@ const { v4: uuidv4 } = require("uuid");
 require("dotenv").config();
 const db = require("./utils/db");
 
-
 const token = process.env.DISCORD_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
 
@@ -112,8 +111,23 @@ client.once(Events.ClientReady, async (c) => {
   console.log(`✅ Ready as ${c.user.tag}`);
 
   try {
-    await db.init(client, process.env.REMINDERS_CHANNEL_ID);
+    const channelId = process.env.REMINDERS_CHANNEL_ID;
+    console.log(`Initializing reminder database with channel ID: ${channelId}`);
+    await db.init(client, channelId);
     console.log("✅ Reminder database initialized!");
+
+    // Verify the channel is accessible
+    const channel = await client.channels.fetch(channelId);
+    if (!channel) {
+      throw new Error("Could not access the storage channel");
+    }
+    console.log(
+      `✅ Successfully connected to storage channel #${channel.name}`
+    );
+
+    // Load initial reminders
+    const reminders = await db.getAll();
+    console.log(`✅ Loaded ${reminders?.length || 0} reminders from storage`);
   } catch (err) {
     console.error("❌ Failed to initialize reminders DB:", err);
   }

@@ -32,6 +32,13 @@ async function createReminder({
   repeat = "none",
   tags = [],
 }) {
+  console.log("Creating new reminder:", {
+    userId,
+    channelId,
+    time: timeIso,
+    title,
+    repeat,
+  });
   const reminder = {
     id: uuidv4(),
     userId,
@@ -97,14 +104,33 @@ async function snoozeReminder(id, minutes = 10, actorUserId) {
 
 async function getDueReminders(now = new Date()) {
   const arr = await db.getAll();
-  // due: time <= now and not completed
-  return (Array.isArray(arr) ? arr : []).filter((r) => {
+  console.log(`Total reminders in database: ${arr?.length || 0}`);
+
+  const dueReminders = (Array.isArray(arr) ? arr : []).filter((r) => {
+    const isDue = new Date(r.time) <= now;
+    const isDelivered = r.delivered;
+    const isCompleted = r.completed;
+
+    // Log status of each due reminder for debugging
+    if (isDue) {
+      console.log(`Reminder ${r.id} status:`, {
+        title: r.title,
+        time: r.time,
+        completed: isCompleted,
+        delivered: isDelivered,
+        dueFor: Math.floor((now - new Date(r.time)) / 1000 / 60) + " minutes",
+      });
+    }
+
     // Check if reminder is:
     // 1. Not completed
     // 2. Not already delivered
     // 3. Due (time <= now)
-    return !r.completed && !r.delivered && new Date(r.time) <= now;
+    return !isCompleted && !isDelivered && isDue;
   });
+
+  console.log(`Found ${dueReminders.length} undelivered due reminders`);
+  return dueReminders;
 }
 
 module.exports = {
