@@ -99,6 +99,26 @@ async function loadFromChannel() {
         try {
           cache = JSON.parse(raw);
           console.log("db: restored reminders from channel message (content)");
+          try {
+            // If some reminders were marked delivered but are past due and not completed,
+            // reset their delivered flag so they can be sent again (handles missed sends during restarts).
+            const now = new Date();
+            let resetCount = 0;
+            for (const r of cache) {
+              if (!r.completed && r.delivered && new Date(r.time) <= now) {
+                r.delivered = false;
+                resetCount++;
+              }
+            }
+            if (resetCount > 0) {
+              console.log(
+                `db: reset delivered flag for ${resetCount} overdue reminders`
+              );
+              await sendUpdateMessage();
+            }
+          } catch (err) {
+            console.error("db: error while resetting delivered flags", err);
+          }
           return;
         } catch (err) {
           console.error(
@@ -119,6 +139,27 @@ async function loadFromChannel() {
           console.log(
             "db: restored reminders from channel message (attachment)"
           );
+          try {
+            const now = new Date();
+            let resetCount = 0;
+            for (const r of cache) {
+              if (!r.completed && r.delivered && new Date(r.time) <= now) {
+                r.delivered = false;
+                resetCount++;
+              }
+            }
+            if (resetCount > 0) {
+              console.log(
+                `db: reset delivered flag for ${resetCount} overdue reminders (attachment)`
+              );
+              await sendUpdateMessage();
+            }
+          } catch (err) {
+            console.error(
+              "db: error while resetting delivered flags (attachment)",
+              err
+            );
+          }
           return;
         } catch (err) {
           console.error("db: failed to fetch/parse attachment", err);
